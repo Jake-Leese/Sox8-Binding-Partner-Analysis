@@ -33,8 +33,10 @@ HHall_ectoderm_TFs <- subset_seurat_features(HHall_ectoderm, DB = "JASPAR2024")
 #### EXTRACT COUNT DATA ####
 
 # Custom function to extract count data for: Stage, Cell_type (ectoderm type), Sample (origin.ident)(optional), and Assay ("RNA" or "SCT"), data_type ("counts" or "data" (log.normalised)), and subset_cells_by_gene ("gene.name") 
+placode_HH8_RNA_Counts <- Extract_count_data(HHall_ectoderm_TFs, Stage = "HH8", Cell_type = "placode", Assay = "RNA", data_type = "counts", subset_cells_by_gene = "SOX8")
+NC_HH8_RNA_Counts <- Extract_count_data(HHall_ectoderm_TFs, Stage = "HH8", Cell_type = "NC", Assay = "RNA", data_type = "counts", subset_cells_by_gene = "SOX8")
 placode_HH9_RNA_Counts <- Extract_count_data(HHall_ectoderm_TFs, Stage = "HH9", Cell_type = "placode", Assay = "RNA", data_type = "counts", subset_cells_by_gene = "SOX8")
-#placode_HH9_SCT_Counts <- Extract_count_data(HHall_ectoderm_TFs, Stage = "HH9", Cell_type = "placode", Assay = "SCT", data_type = "counts", subset_cells_by_gene = "SOX8")
+NC_HH9_RNA_Counts <- Extract_count_data(HHall_ectoderm_TFs, Stage = "HH9", Cell_type = "NC", Assay = "RNA", data_type = "counts", subset_cells_by_gene = "SOX8")
 
 #dim(placode_HH9_SCT_Counts)
 dim(placode_HH9_RNA_Counts)
@@ -48,14 +50,14 @@ dim(placode_HH9_RNA_Counts)
 # Returns whole correlation matrix
 #placode_HH9_RNA_pearson <- Correlation_analysis(placode_HH9_RNA_Counts, remove_null_count_genes = TRUE, Test = "pearson")
 #placode_HH9_SCT_pearson <- Correlation_analysis(placode_HH9_SCT_Counts, remove_null_count_genes = TRUE, Test = "pearson")
-placode_HH9_RNA_spearman <- Correlation_analysis(placode_HH9_RNA_Counts, remove_null_count_genes = TRUE, Test = "spearman")
+#placode_HH9_RNA_spearman <- Correlation_analysis(placode_HH9_RNA_Counts, remove_null_count_genes = TRUE, Test = "spearman")
 #placode_HH9_SCT_spearman <- Correlation_analysis(placode_HH9_SCT_Counts, remove_null_count_genes = TRUE, Test = "spearman")
 
 # Returns correlation values for specified gene only
-#placode_HH9_RNA_pearson_SOX8 <- Correlation_analysis(placode_HH9_RNA_Counts, remove_null_count_genes = TRUE, Test = "pearson", Gene = "SOX8")
-#placode_HH9_SCT_pearson_SOX8 <- Correlation_analysis(placode_HH9_SCT_Counts, remove_null_count_genes = TRUE, Test = "pearson", Gene = "SOX8")
+placode_HH8_RNA_spearman_SOX8 <- Correlation_analysis(placode_HH8_RNA_Counts, remove_null_count_genes = TRUE, Test = "spearman", Gene = "SOX8")
+NC_HH8_RNA_spearman_SOX8 <- Correlation_analysis(NC_HH8_RNA_Counts, remove_null_count_genes = TRUE, Test = "spearman", Gene = "SOX8")
 placode_HH9_RNA_spearman_SOX8 <- Correlation_analysis(placode_HH9_RNA_Counts, remove_null_count_genes = TRUE, Test = "spearman", Gene = "SOX8")
-#placode_HH9_SCT_spearman_SOX8 <- Correlation_analysis(placode_HH9_SCT_Counts, remove_null_count_genes = TRUE, Test = "spearman", Gene = "SOX8")
+NC_HH9_RNA_spearman_SOX8 <- Correlation_analysis(NC_HH9_RNA_Counts, remove_null_count_genes = TRUE, Test = "spearman", Gene = "SOX8")
 
 # Retrieve stats about the correlation matrix
 dim(placode_HH9_SCT_spearman_SOX8) # number of genes
@@ -74,28 +76,43 @@ sd(as.numeric(placode_HH9_SCT_pearson_SOX8[placode_HH9_SCT_pearson_SOX8 < 0.99])
 # extract values excl diagonals and any that are > 0.99 and return to a dataframe with correlation and method columns
 #placode_HH9_RNA_pearson_cor_val <- data.frame(correlation = (placode_HH9_RNA_pearson[upper.tri(placode_HH9_RNA_pearson)])[placode_HH9_RNA_pearson[upper.tri(placode_HH9_RNA_pearson)] < 0.99], method = "RNA_pearson")
 #placode_HH9_SCT_pearson_cor_val <- data.frame(correlation = (placode_HH9_SCT_pearson[upper.tri(placode_HH9_SCT_pearson)])[placode_HH9_SCT_pearson[upper.tri(placode_HH9_SCT_pearson)] < 0.99], method = "SCT_pearson")
-placode_HH9_RNA_spearman_cor_val <- data.frame(correlation = (placode_HH9_RNA_spearman[upper.tri(placode_HH9_RNA_spearman)])[placode_HH9_RNA_spearman[upper.tri(placode_HH9_RNA_spearman)] < 0.99], method = "RNA_spearman")
+#placode_HH9_RNA_spearman_cor_val <- data.frame(correlation = (placode_HH9_RNA_spearman[upper.tri(placode_HH9_RNA_spearman)])[placode_HH9_RNA_spearman[upper.tri(placode_HH9_RNA_spearman)] < 0.99], method = "RNA_spearman")
 #placode_HH9_SCT_spearman_cor_val <- data.frame(correlation = (placode_HH9_SCT_spearman[upper.tri(placode_HH9_SCT_spearman)])[placode_HH9_SCT_spearman[upper.tri(placode_HH9_SCT_spearman)] < 0.99], method = "SCT_spearman")
 
 # extract values from gene specific correlation dataframe and format appropriately for plotting
-#placode_HH9_RNA_pearson_cor_val <- data.frame(correlation = as.numeric(placode_HH9_RNA_pearson_SOX8[placode_HH9_RNA_pearson_SOX8 < 0.99]), method = "RNA_pearson") 
-#placode_HH9_SCT_pearson_cor_val <- data.frame(correlation = as.numeric(placode_HH9_SCT_pearson_SOX8[placode_HH9_SCT_pearson_SOX8 < 0.99]), method = "SCT_pearson")
-placode_HH9_RNA_spearman_cor_val <- data.frame(correlation = as.numeric(placode_HH9_RNA_spearman_SOX8[placode_HH9_RNA_spearman_SOX8 < 0.99]), method = "RNA_spearman")
-#placode_HH9_SCT_spearman_cor_val <- data.frame(correlation = as.numeric(placode_HH9_SCT_spearman_SOX8[placode_HH9_SCT_spearman_SOX8 < 0.99]), method = "SCT_spearman")
+placode_HH8_RNA_spearman_cor_val <- data.frame(correlation = as.numeric(placode_HH8_RNA_spearman_SOX8[placode_HH8_RNA_spearman_SOX8 < 0.99]), Stage_CellType = "HH8_placode") 
+NC_HH8_RNA_spearman_cor_val <- data.frame(correlation = as.numeric(NC_HH8_RNA_spearman_SOX8[NC_HH8_RNA_spearman_SOX8 < 0.99]), Stage_CellType = "HH8_NC")
+placode_HH9_RNA_spearman_cor_val <- data.frame(correlation = as.numeric(placode_HH9_RNA_spearman_SOX8[placode_HH9_RNA_spearman_SOX8 < 0.99]), Stage_CellType = "HH9_placode")
+NC_HH9_RNA_spearman_cor_val <- data.frame(correlation = as.numeric(NC_HH9_RNA_spearman_SOX8[NC_HH9_RNA_spearman_SOX8 < 0.99]), Stage_CellType = "HH9_NC")
 
 # combine dataframes 
-combined_df <- rbind(placode_HH9_RNA_spearman_cor_val, placode_HH9_SCT_spearman_cor_val, placode_HH9_RNA_pearson_cor_val, placode_HH9_SCT_pearson_cor_val)
+Combined_df <- rbind(placode_HH8_RNA_spearman_cor_val, NC_HH8_RNA_spearman_cor_val, placode_HH9_RNA_spearman_cor_val, NC_HH9_RNA_spearman_cor_val)
 
-# Plot as box plots for each correlation matrix
-ggplot(combined_df, aes(x = method, y = correlation)) + 
+# Calculate the mean + SD for each group
+thresholds <- Combined_df %>%
+  group_by(Stage_CellType) %>%
+  summarize(threshold = mean(correlation) + sd(correlation))
+
+# Join the threshold back to the original dataframe for comparison
+Combined_df <- Combined_df %>%
+  left_join(thresholds, by = "Stage_CellType") %>%
+  mutate(above_threshold = factor(correlation > threshold, levels = c(FALSE, TRUE)))
+
+# Plot correlation values as box plots and color points above the mean + stdev threshold as red vs blue.
+plot <- ggplot(Combined_df, aes(x = Stage_CellType, y = correlation)) + 
   geom_boxplot(fill = "skyblue", color = "darkblue", outlier.shape = NA) + # Box plot appearance
-  geom_jitter(width = 0.3, color = "blue", size = 0.1, alpha = 0.7) +  # Add points for individual values
-  labs(title = "HH9 placode cells SOX8 correlation coefficients", 
-       x = "Method", y = "Correlation") + 
+  geom_jitter(aes(color = above_threshold), 
+              width = 0.3, size = 0.1, alpha = 0.7) +  # Add points for individual values
+  scale_color_manual(values = c("FALSE" = "darkblue", "TRUE" = "red")) +
+  labs(title = "SOX8 correlation coefficients - RNA spearman SOX8+ cells", 
+       x = "Stage_CellType", y = "Correlation") + 
   theme_minimal()
 
+svg("/data/Sox8_binding_partner_analysis/Plots/QC/SOX8_correlation_coefficients_RNA_Sox8_positive.svg", width = 8, height = 6)
+print(plot)
+dev.off()
 
-write.csv(combined_df, "/data/Sox8_binding_partner_analysis/Plots/QC/SOX8_correlation_coefficients_HH9_placode_Sox8_positive.csv")
+write.csv(Combined_df, "/data/Sox8_binding_partner_analysis/Plots/QC/SOX8_correlation_coefficients_HH9_placode_Sox8_positive.csv")
 
 
 #### PLOTTING CORRELATION AGAINST TOTAL COUNTS FOR EACH GENE IN RELATION TO SOX8 ####

@@ -20,7 +20,7 @@ Extract_count_data <- function(Seurat_obj, Stage, Cell_type, Sample, Assay, data
   if (missing(data_type)) {
     Seurat_processed <- t(Seurat_processed[[Assay]]$counts)
   } else {
-    Seurat_processed <- t(GetAssayData(Seurat_processed, assay = Assay, slot = data_type))
+    Seurat_processed <- t(GetAssayData(Seurat_processed, assay = Assay, layer = data_type))
   }
   
   if (missing(subset_cells_by_gene)) {

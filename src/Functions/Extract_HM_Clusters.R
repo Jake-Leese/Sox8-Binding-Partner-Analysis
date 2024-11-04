@@ -1,4 +1,4 @@
-# Function to extract clusters from a heatmap 
+# Function to extract clusters from a heatmap and assign them  
 
 Extract_HM_Clusters <- function(Heatmap, correlation_matrix) {
   
@@ -17,5 +17,15 @@ Extract_HM_Clusters <- function(Heatmap, correlation_matrix) {
       out <- rbind(out, clu)
     }
   }
-  return(out)
+  
+  # Add a cluster label column to the original correlation_matrix
+  correlation_matrix_clust <- as.data.frame(out[match(rownames(correlation_matrix),out[,1]), ]) # 
+  correlation_matrix_df <- as.data.frame(correlation_matrix)
+  correlation_matrix_df$Heatmap_Cluster <- c(correlation_matrix_clust[,2])
+  
+  # re-ordering based on cluster number
+  correlation_matrix_df$Heatmap_Cluster <- as.numeric(sub(".*_(\\d+)$", "\\1", correlation_matrix_df$Heatmap_Cluster)) # Changing the cluster column to contain only numbers. This allows us to re-order the dataframe based on the order of the clusters
+  correlation_matrix_df <- correlation_matrix_df[order(correlation_matrix_df$Heatmap_Cluster),]
+  
+  return(correlation_matrix_df)
 }
