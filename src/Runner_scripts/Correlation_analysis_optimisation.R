@@ -88,6 +88,14 @@ NC_HH9_RNA_spearman_cor_val <- data.frame(correlation = as.numeric(NC_HH9_RNA_sp
 # combine dataframes 
 Combined_df <- rbind(placode_HH8_RNA_spearman_cor_val, NC_HH8_RNA_spearman_cor_val, placode_HH9_RNA_spearman_cor_val, NC_HH9_RNA_spearman_cor_val)
 
+# Plot as box plots for each correlation matrix
+ggplot(Combined_df, aes(x = Stage_CellType, y = correlation)) + 
+  geom_boxplot(fill = "skyblue", color = "darkblue", outlier.shape = NA) + # Box plot appearance
+  geom_jitter(width = 0.3, color = "blue", size = 0.1, alpha = 0.7) +  # Add points for individual values
+  labs(title = "SOX8 RNA spearman correlations for SOX8+ cells", 
+       x = "Method", y = "Correlation") + 
+  theme_minimal()
+
 # Calculate the mean + SD for each group
 thresholds <- Combined_df %>%
   group_by(Stage_CellType) %>%
@@ -120,22 +128,37 @@ write.csv(Combined_df, "/data/Sox8_binding_partner_analysis/Plots/QC/SOX8_correl
 # custom function to combine total_counts and correlations for each gene based on a provided counts matrix and correlation df, respectively. 
 # The function returns a dataframe with the gene, counts, correlations, and log_counts, and also returns a scatter plot of log total counts against correlation
 
+HH8_RNA_spearman_placode_counts_and_cor <- plot_correlation_against_counts(placode_HH8_RNA_Counts, placode_HH8_RNA_spearman_SOX8)
+HH8_RNA_spearman_NC_counts_and_cor <- plot_correlation_against_counts(NC_HH8_RNA_Counts, NC_HH8_RNA_spearman_SOX8)
 HH9_RNA_spearman_placode_counts_and_cor <- plot_correlation_against_counts(placode_HH9_RNA_Counts, placode_HH9_RNA_spearman_SOX8)
+HH9_RNA_spearman_NC_counts_and_cor <- plot_correlation_against_counts(NC_HH9_RNA_Counts, NC_HH9_RNA_spearman_SOX8)
 
-log(sum(placode_HH9_RNA_Counts[, "SOX8"]))
+# Comparing total SOX8 counts
+log(sum(placode_HH8_RNA_Counts[, "SOX8"]))  # 6.338594
+log(sum(NC_HH8_RNA_Counts[, "SOX8"]))   # 6.948897
+log(sum(placode_HH9_RNA_Counts[, "SOX8"]))  # 6.472346 
+log(sum(NC_HH9_RNA_Counts[, "SOX8"]))  # 9.013717
 
-write.csv(HH9_RNA_spearman_placode_counts_and_cor, "/data/Sox8_binding_partner_analysis/Plots/QC/Counts_against_correlation_HH9_RNA_spearman_placode_SOX8_cells.csv")
+#write.csv(HH9_RNA_spearman_placode_counts_and_cor, "/data/Sox8_binding_partner_analysis/Plots/QC/Counts_against_correlation_HH9_RNA_spearman_placode_SOX8_cells.csv")
 
-HH9_RNA_spearman_placode_counts_and_cor %>% arrange(desc(correlations))
+HH8_RNA_spearman_NC_counts_and_cor %>% arrange(desc(correlations))
 
-# points_to_label <- c("PAX2", "GBX2", "MYCN", "NR6A1", "SOX13", "HES5", "ATF4", "LMX1A", "TCF12", "SOX21") # For placode plots
-points_to_label <- c("TFAP2B", "ETS1", "ATF4", "MYC", "NR6A1", "SOX10", "TCF3", "SOX4", "TCF12", "TFDP1") # for NC plots
+HH8_placode_points_to_label <- c("LMX1B", "SP8", "TCF12", "DLX6", "TFAP2C", "LMX1A", "NR6A1", "NOTO", "SP5", "BHLHE23") # For placode plots
+HH8_NC_points_to_label <- c("SOX9", "ETS1", "TFAP2B", "CREB3L1", "FOXD3", "SOX10", "TFAP2E", "TFAP2A", "NEUROG2", "MYC") # for NC plots
+HH9_placode_points_to_label <- c("PAX2", "GBX2", "MYCN", "NR6A1", "SOX13", "HES5", "ATF4", "LMX1A", "TCF12", "SOX21") # For placode plots
+HH9_NC_points_to_label <- c("TFAP2B", "ETS1", "ATF4", "MYC", "NR6A1", "SOX10", "TCF3", "SOX4", "TCF12", "TFDP1") # for NC plots
 
-HH9_RNA_spearman_placode_counts_and_cor$label <- ifelse(rownames(HH9_RNA_spearman_placode_counts_and_cor) %in% points_to_label, rownames(HH9_RNA_spearman_placode_counts_and_cor), NA)
+# Adding a label column as a logical vector stating TRUE for the specified genes above. This is then called into ggplot for labelling those points
+HH8_RNA_spearman_placode_counts_and_cor$label <- ifelse(rownames(HH8_RNA_spearman_placode_counts_and_cor) %in% HH8_placode_points_to_label, rownames(HH8_RNA_spearman_placode_counts_and_cor), NA)
+HH8_RNA_spearman_NC_counts_and_cor$label <- ifelse(rownames(HH8_RNA_spearman_NC_counts_and_cor) %in% HH8_NC_points_to_label, rownames(HH8_RNA_spearman_NC_counts_and_cor), NA)
+HH9_RNA_spearman_placode_counts_and_cor$label <- ifelse(rownames(HH9_RNA_spearman_placode_counts_and_cor) %in% HH9_placode_points_to_label, rownames(HH9_RNA_spearman_placode_counts_and_cor), NA)
+HH9_RNA_spearman_NC_counts_and_cor$label <- ifelse(rownames(HH9_RNA_spearman_NC_counts_and_cor) %in% HH9_NC_points_to_label, rownames(HH9_RNA_spearman_NC_counts_and_cor), NA)
 
-ggplot(HH9_RNA_spearman_placode_counts_and_cor, aes(x = log_total_counts, y = correlations)) +
+# Plot a scatter plot and label the top factors
+ggplot(HH8_RNA_spearman_NC_counts_and_cor, aes(x = log_total_counts, y = correlations)) +
   geom_point(color = "blue") +
   geom_label_repel(aes(label = label), color = "black") +
-  labs(x = "log_total_counts", y = "correlation", title = "HH9_RNA_spearman_placode_counts_and_cor") +
+  labs(x = "log_total_counts", y = "correlation", title = "HH8_RNA_spearman_NC_counts_and_cor") +
   theme_minimal()
 
+write.csv(HH8_RNA_spearman_NC_counts_and_cor, "/data/Sox8_binding_partner_analysis/Plots/QC/Counts_against_correlation_HH8_RNA_spearman_NC_Sox8_cells.csv")
