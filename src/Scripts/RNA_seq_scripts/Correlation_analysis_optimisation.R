@@ -1,4 +1,6 @@
-# Script to calculate correlation coefficients and write to files
+# Script to calculate correlation coefficients, plot and write them to file
+# Run using ArchR_Seurat_R_4.4.1.sif container
+
 
 setwd("/data/Sox8_binding_partner_analysis/scRNAseq_objects/")
 .libPaths("/R/libs/ArchR_Seurat_R_441")
@@ -141,11 +143,11 @@ log(sum(NC_HH9_RNA_Counts[, "SOX8"]))  # 9.013717
 
 #write.csv(HH9_RNA_spearman_placode_counts_and_cor, "/data/Sox8_binding_partner_analysis/Plots/QC/Counts_against_correlation_HH9_RNA_spearman_placode_SOX8_cells.csv")
 
-HH8_RNA_spearman_NC_counts_and_cor %>% arrange(desc(correlations))
+HH9_RNA_spearman_placode_counts_and_cor %>% arrange(desc(correlations))
 
-HH8_placode_points_to_label <- c("LMX1B", "SP8", "TCF12", "DLX6", "TFAP2C", "LMX1A", "NR6A1", "NOTO", "SP5", "BHLHE23") # For placode plots
-HH8_NC_points_to_label <- c("SOX9", "ETS1", "TFAP2B", "CREB3L1", "FOXD3", "SOX10", "TFAP2E", "TFAP2A", "NEUROG2", "MYC") # for NC plots
-HH9_placode_points_to_label <- c("PAX2", "GBX2", "MYCN", "NR6A1", "SOX13", "HES5", "ATF4", "LMX1A", "TCF12", "SOX21") # For placode plots
+HH8_placode_points_to_label <- c("LMX1B", "SP8", "TCF12", "DLX6", "TFAP2C", "LMX1A", "NR6A1", "NOTO", "SP5", "BHLHE23", "ASCL1") # For placode plots
+HH8_NC_points_to_label <- c("SOX9", "ETS1", "TFAP2B", "CREB3L1", "FOXD3", "SOX10", "TFAP2E", "TFAP2A", "NEUROG2", "MYC", "FLI1") # for NC plots
+HH9_placode_points_to_label <- c("PAX2", "GBX2", "MYCN", "NR6A1", "SOX13", "SIX1", "TFAP2A", "LMX1A", "FOXG1", "SOX10", "RXRG") # For placode plots
 HH9_NC_points_to_label <- c("TFAP2B", "ETS1", "ATF4", "MYC", "NR6A1", "SOX10", "TCF3", "SOX4", "TCF12", "TFDP1") # for NC plots
 
 # Adding a label column as a logical vector stating TRUE for the specified genes above. This is then called into ggplot for labelling those points
@@ -154,11 +156,23 @@ HH8_RNA_spearman_NC_counts_and_cor$label <- ifelse(rownames(HH8_RNA_spearman_NC_
 HH9_RNA_spearman_placode_counts_and_cor$label <- ifelse(rownames(HH9_RNA_spearman_placode_counts_and_cor) %in% HH9_placode_points_to_label, rownames(HH9_RNA_spearman_placode_counts_and_cor), NA)
 HH9_RNA_spearman_NC_counts_and_cor$label <- ifelse(rownames(HH9_RNA_spearman_NC_counts_and_cor) %in% HH9_NC_points_to_label, rownames(HH9_RNA_spearman_NC_counts_and_cor), NA)
 
-# Plot a scatter plot and label the top factors
-ggplot(HH8_RNA_spearman_NC_counts_and_cor, aes(x = log_total_counts, y = correlations)) +
-  geom_point(color = "blue") +
+# Adding a threshold label to dataframes (TRUE or FALSE) based on whether the values fall above the stdev+mean threshold
+HH8_RNA_spearman_placode_counts_and_cor$threshold <- ifelse(HH8_RNA_spearman_placode_counts_and_cor$correlations > (sd(HH8_RNA_spearman_placode_counts_and_cor$correlations) + mean(HH8_RNA_spearman_placode_counts_and_cor$correlations)), "TRUE", "FALSE")
+HH8_RNA_spearman_NC_counts_and_cor$threshold <- ifelse(HH8_RNA_spearman_NC_counts_and_cor$correlations > (sd(HH8_RNA_spearman_NC_counts_and_cor$correlations) + mean(HH8_RNA_spearman_NC_counts_and_cor$correlations)), "TRUE", "FALSE")
+HH9_RNA_spearman_placode_counts_and_cor$threshold <- ifelse(HH9_RNA_spearman_placode_counts_and_cor$correlations > (sd(HH9_RNA_spearman_placode_counts_and_cor$correlations) + mean(HH9_RNA_spearman_placode_counts_and_cor$correlations)), "TRUE", "FALSE")
+HH9_RNA_spearman_NC_counts_and_cor$threshold <- ifelse(HH9_RNA_spearman_NC_counts_and_cor$correlations > (sd(HH9_RNA_spearman_NC_counts_and_cor$correlations) + mean(HH9_RNA_spearman_NC_counts_and_cor$correlations)), "TRUE", "FALSE")
+
+
+# Plot a scatter plot, label specified factors and colour points above the threshold in red
+ggplot(HH9_RNA_spearman_placode_counts_and_cor, aes(x = log_total_counts, y = correlations)) +
+  geom_point(aes(color = threshold)) +
+  scale_color_manual(values = c("FALSE" = "darkblue", "TRUE" = "red")) +
   geom_label_repel(aes(label = label), color = "black") +
-  labs(x = "log_total_counts", y = "correlation", title = "HH8_RNA_spearman_NC_counts_and_cor") +
+  labs(x = "log_total_counts", y = "correlation", title = "HH9_RNA_spearman_placode_counts_and_cor") +
   theme_minimal()
 
-write.csv(HH8_RNA_spearman_NC_counts_and_cor, "/data/Sox8_binding_partner_analysis/Plots/QC/Counts_against_correlation_HH8_RNA_spearman_NC_Sox8_cells.csv")
+# Save dataframes
+write.csv(HH9_RNA_spearman_NC_counts_and_cor, "/data/Sox8_binding_partner_analysis/Plots/QC/Counts_against_correlation_HH9_RNA_spearman_NC_SOX8_cells.csv")
+
+# Order dataframes by column 
+#HH8_RNA_spearman_NC_counts_and_cor %>% arrange(log_total_counts) 

@@ -1,0 +1,120 @@
+# Script to follow the same process used to characterise Sox8 co-expressed TFs, but extending it to all genes
+# These will then be used to make gene lists for enhancer annotation of Placodal and NC enhancers
+# Run using ArchR_Seurat_R_4.4.1.sif container
+
+setwd("/data/Sox8_binding_partner_analysis/scRNAseq_objects/")
+.libPaths("/R/libs/ArchR_Seurat_R_441")
+
+library(Seurat)
+library(usethis)
+library(devtools)
+library(TFBSTools)
+library(JASPAR2024)
+library(dplyr)
+library(WGCNA)
+library(ComplexHeatmap)
+library(circlize)
+library(universalmotif)
+library(ggplot2)
+library(ggrepel)
+library(GenomicRanges)
+library(rtracklayer)
+library(dplyr)
+
+############################### MAKE PPR/NC GENE LISTS FROM SCRNA-SEQ DATA ##########################################
+
+source("/data/Sox8_binding_partner_analysis/src/Functions/Extract_HM_Clusters.R")
+source("/data/Sox8_binding_partner_analysis/src/Functions/subset_seurat_features.R")
+source("/data/Sox8_binding_partner_analysis/src/Functions/Extract_count_data.R")
+source("/data/Sox8_binding_partner_analysis/src/Functions/Correlation_analysis.R")
+source("/data/Sox8_binding_partner_analysis/src/Functions/plot_correlation_against_counts.R")
+
+
+# Load the original Seurat object
+HHall_ectoderm <- readRDS("HHall_ectoderm_2024-06-24")
+
+
+# Custom function to extract count data for: Stage, Cell_type (ectoderm type), Sample (origin.ident)(optional), and Assay ("RNA" or "SCT"), data_type ("counts" or "data" (log.normalised)), and subset_cells_by_gene ("gene.name") 
+placode_HH8_RNA_Counts <- Extract_count_data(HHall_ectoderm, Stage = "HH8", Cell_type = "placode", Assay = "RNA", data_type = "counts", subset_cells_by_gene = "SOX8")
+NC_HH8_RNA_Counts <- Extract_count_data(HHall_ectoderm, Stage = "HH8", Cell_type = "NC", Assay = "RNA", data_type = "counts", subset_cells_by_gene = "SOX8")
+placode_HH9_RNA_Counts <- Extract_count_data(HHall_ectoderm, Stage = "HH9", Cell_type = "placode", Assay = "RNA", data_type = "counts", subset_cells_by_gene = "SOX8")
+NC_HH9_RNA_Counts <- Extract_count_data(HHall_ectoderm, Stage = "HH9", Cell_type = "NC", Assay = "RNA", data_type = "counts", subset_cells_by_gene = "SOX8")
+
+#### CALCULATE CORRELATION COEFFICIENTS ####
+# Returns correlation values for specified gene only
+placode_HH8_RNA_spearman_SOX8 <- Correlation_analysis(placode_HH8_RNA_Counts, remove_null_count_genes = TRUE, Test = "spearman", Gene = "SOX8")
+NC_HH8_RNA_spearman_SOX8 <- Correlation_analysis(NC_HH8_RNA_Counts, remove_null_count_genes = TRUE, Test = "spearman", Gene = "SOX8")
+placode_HH9_RNA_spearman_SOX8 <- Correlation_analysis(placode_HH9_RNA_Counts, remove_null_count_genes = TRUE, Test = "spearman", Gene = "SOX8")
+NC_HH9_RNA_spearman_SOX8 <- Correlation_analysis(NC_HH9_RNA_Counts, remove_null_count_genes = TRUE, Test = "spearman", Gene = "SOX8")
+
+
+# extract values from gene specific correlation dataframe and format appropriately for plotting
+placode_HH8_RNA_spearman_cor_val <- data.frame(correlation = as.numeric(placode_HH8_RNA_spearman_SOX8[placode_HH8_RNA_spearman_SOX8 < 0.99]), Stage_CellType = "HH8_placode") 
+NC_HH8_RNA_spearman_cor_val <- data.frame(correlation = as.numeric(NC_HH8_RNA_spearman_SOX8[NC_HH8_RNA_spearman_SOX8 < 0.99]), Stage_CellType = "HH8_NC")
+placode_HH9_RNA_spearman_cor_val <- data.frame(correlation = as.numeric(placode_HH9_RNA_spearman_SOX8[placode_HH9_RNA_spearman_SOX8 < 0.99]), Stage_CellType = "HH9_placode")
+NC_HH9_RNA_spearman_cor_val <- data.frame(correlation = as.numeric(NC_HH9_RNA_spearman_SOX8[NC_HH9_RNA_spearman_SOX8 < 0.99]), Stage_CellType = "HH9_NC")
+
+# combine dataframes 
+Combined_df <- rbind(placode_HH8_RNA_spearman_cor_val, NC_HH8_RNA_spearman_cor_val, placode_HH9_RNA_spearman_cor_val, NC_HH9_RNA_spearman_cor_val)
+
+# Calculate the mean + SD for each group
+#thresholds <- Combined_df %>%
+ #group_by(Stage_CellType) %>%
+  #summarize(threshold = mean(correlation) + sd(correlation))
+
+# Filter genes based on thresholds
+#HH8_Placode_genes <- colnames(placode_HH8_RNA_spearman_SOX8)[placode_HH8_RNA_spearman_SOX8 >= 0.103]   # 17426 to 2773
+#HH8_NC_genes <- colnames(NC_HH8_RNA_spearman_SOX8)[NC_HH8_RNA_spearman_SOX8 >= 0.0994]                 # 17452 to 2594
+#HH9_Placode_genes <- colnames(placode_HH9_RNA_spearman_SOX8)[placode_HH9_RNA_spearman_SOX8 >= 0.159]   # 17568 to 2905
+#HH9_NC_genes <- colnames(NC_HH9_RNA_spearman_SOX8)[NC_HH9_RNA_spearman_SOX8 >= 0.233]                  # 21379 to 3477
+
+# Filter based on previously calculated thresholds (those used for transcription factors)
+HH8_Placode_genes <- colnames(placode_HH8_RNA_spearman_SOX8)[placode_HH8_RNA_spearman_SOX8 >= 0.109216]   # 17426 to 2773
+HH8_NC_genes <- colnames(NC_HH8_RNA_spearman_SOX8)[NC_HH8_RNA_spearman_SOX8 >= 0.117146]                 # 17452 to 2594
+HH9_Placode_genes <- colnames(placode_HH9_RNA_spearman_SOX8)[placode_HH9_RNA_spearman_SOX8 >= 0.148648]   # 17568 to 2905
+HH9_NC_genes <- colnames(NC_HH9_RNA_spearman_SOX8)[NC_HH9_RNA_spearman_SOX8 >= 0.208392]                  # 21379 to 3477
+
+############################### ASSIGN GALGAL6 ACCESSION NUMBERS TO TFS 
+galgal6_gtf <- import("/data/Sox8_binding_partner_analysis/genome_files/Gallus_gallus.GRCg6a.97.gtf")
+galgal6_gtf_df <- as.data.frame(galgal6_gtf)
+  
+# Function to return character vector of gene names, gene_ids, or gene_list, and return gene name and corresponding gene_ids
+Add_gene_IDs <- function(gtf, gene_list) {
+filtered_gtf <- gtf %>%
+  filter(gene_name %in% gene_list | gene_id %in% gene_list | transcript_id %in% gene_list) %>%
+  select(gene_id, gene_name) %>%
+  distinct(gene_id, .keep_all = TRUE)
+}  
+
+HH8_Placode_gene_ids <- Add_gene_IDs(galgal6_gtf_df, HH8_Placode_genes)
+HH8_NC_gene_ids <- Add_gene_IDs(galgal6_gtf_df, HH8_NC_genes)
+HH9_Placode_gene_ids <- Add_gene_IDs(galgal6_gtf_df, HH9_Placode_genes)
+HH9_NC_gene_ids <- Add_gene_IDs(galgal6_gtf_df, HH9_NC_genes)
+
+# Adding Sox8 coexpression values to each gene for future reference
+HH8_Placode_gene_ids$Sox8_coexpression <- t(placode_HH8_RNA_spearman_SOX8[HH8_Placode_gene_ids$gene_name])
+HH8_NC_gene_ids$Sox8_coexpression <- t(NC_HH8_RNA_spearman_SOX8[HH8_NC_gene_ids$gene_name])
+HH9_Placode_gene_ids$Sox8_coexpression <- t(placode_HH9_RNA_spearman_SOX8[HH9_Placode_gene_ids$gene_name])
+HH9_NC_gene_ids$Sox8_coexpression <- t(NC_HH9_RNA_spearman_SOX8[HH9_NC_gene_ids$gene_name])
+
+# Saving as .csv file
+write.csv(HH8_Placode_gene_ids, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH8_Placode_gene_ids.csv")
+write.csv(HH8_NC_gene_ids, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH8_NC_gene_ids.csv")
+write.csv(HH9_Placode_gene_ids, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH9_Placode_gene_ids.csv")
+write.csv(HH9_NC_gene_ids, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH8_NC_gene_ids.csv")
+
+# Saving as gene_lists using gene_ids for enhancer annotation
+writeLines(HH8_Placode_gene_ids$gene_id, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH8_Placode_genes.txt")
+writeLines(HH8_NC_gene_ids$gene_id, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH8_NC_genes.txt")
+writeLines(HH9_Placode_gene_ids$gene_id, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH9_Placode_genes.txt")
+writeLines(HH9_NC_gene_ids$gene_id, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH9_NC_genes.txt")
+
+# Saving unfiltered gene_lists using default names from seurat
+#writeLines(HH8_Placode_genes, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH8_Placode_genes.txt")
+#writeLines(HH8_NC_genes, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH8_NC_genes.txt")
+#writeLines(HH9_Placode_genes, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH9_Placode_genes.txt")
+#writeLines(HH9_NC_genes, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH9_NC_genes.txt")
+
+
+
+dim(HH8_Placode_gene_ids)
