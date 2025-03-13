@@ -50,10 +50,8 @@ path_MEME <- "/data/Sox8_binding_partner_analysis/scATACseq_objects/Peaksets/250
 ss4ArchRProj <- loadArchRProject(path = '/data/Sox8_binding_partner_analysis/scATACseq_objects/ss4_Save-ArchR', force = FALSE)
 ss8ArchRProj <- loadArchRProject(path = '/data/Sox8_binding_partner_analysis/scATACseq_objects/ss8_Save-ArchR', force = FALSE)
 
-
 ##############################################################################################################################
 ############################ Define NC and PPR accessible peaks using pairwise tests ########################################
-
 
 # Function to perform pairwise tests between defined cell types. Returns a GRanges list of all the pairwise comparisons
 
@@ -123,17 +121,6 @@ ss4_NC_accessible_peaks <- readRDS(paste0(output_dir, "ss4/NC_pairwise_peaks.gr.
 ss8_PPR_accessible_peaks <- readRDS(paste0(output_dir, "ss8/PPR_pairwise_peaks.gr.list.rds"))
 ss8_NC_accessible_peaks <- readRDS(paste0(output_dir, "ss8/NC_pairwise_peaks.gr.list.rds"))
 
-# Plot differential accessibility volcano plots for each pairwise comparison in HH9 PPR
-ss8_PPR_v_NC_pv <- plotMarkers(seMarker = ss8_PPR_accessible_peaks$Placodal_vs_NC, 
-                      name = "Placodal", 
-                      cutOff = "FDR <= 0.1 & abs(Log2FC) >= 1", 
-                      plotAs = "Volcano")
-
-plot(SS4_pv)
-
-svg("ss4_NC_v_Placode_volcano.svg", width = 8, height = 6)
-plot(SS4_pv)
-dev.off()
 
 # Consolidate all ss4 and ss8 PPR and NC accessible peaks
 # Function to unify GRanges within a GRanges list and avoid duplicates
@@ -187,6 +174,8 @@ SOX8_tfm <- getMatrixSet(JASPAR2020, opts = list(collection = "CORE", tax_group 
 Sox8_motif_hits <- matchMotifs(SOX8_tfm, Combined_NC_PPR_Peaks, genome = BSgenome.Ggallus.UCSC.galGal6, 
                           out = "positions", p.cutoff = 1e-04, bg = ACTG_freqs)
 saveRDS(Sox8_motif_hits, paste0(path_GR, "Sox8_positions_all_peaks.gr.rds"))
+
+Sox8_motif_hits <- readRDS(paste0(path_GR, "Sox8_positions_all_peaks.gr.rds"))
 
 # Subset original GRanges object to only those with a SOX8 binding motif
 NC_PPR_combined_SOX8_gr <- subsetByOverlaps(Combined_NC_PPR_Peaks, Sox8_motif_hits)

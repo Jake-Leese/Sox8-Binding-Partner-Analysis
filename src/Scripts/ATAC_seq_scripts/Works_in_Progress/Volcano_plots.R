@@ -58,7 +58,7 @@ ss8_PPR_marker_peaks <- getMarkerFeatures(
 )
 
 # Plot differential accessibility volcano plots for each pairwise comparison of HH9 PPR
-ss8_PPR_marker_peaks_pv <- plotMarkers(seMarker = ss8_PPR_marker_peaks, 
+ss8_PPR_marker_peaks_pv <- plotMarkers(seMarker = ss8_PPR_v_Contam_markers, 
                                name = "Placodal", 
                                cutOff = "FDR <= 0.05 & abs(Log2FC) >= 1", 
                                plotAs = "Volcano")
@@ -69,4 +69,18 @@ Plot_path <- "/data/Sox8_binding_partner_analysis/Plots/March_25_Volcano_plots/"
 
 svg(paste0(Plot_path, "ss8_Placode_v_All_volcano.svg"), width = 8, height = 6)
 plot(ss8_PPR_marker_peaks_pv)
+dev.off()
+
+
+# Plot a UMAP by "transferred_scHelper_cell_type_broad"
+p1 <- plotEmbedding(ss8ArchRProj,
+                    colorBy = "cellColData",
+                    name = "transferred_scHelper_cell_type_broad",
+                    embedding = "UMAP"
+                    )
+
+plot(p1)
+
+svg(paste0(Plot_path, "ss8_broad_cell_type_UMAP.svg"), width = 8, height = 6)
+plot(p1)
 dev.off()
