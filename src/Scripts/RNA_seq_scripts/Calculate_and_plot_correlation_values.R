@@ -1,3 +1,6 @@
+# Simplified script to calculate correlation coefficients and visualise distributions using custom function, Expression_correlation_analysis
+# Run using ArchR_Seurat_R_4.4.1.sif container
+
 setwd("/data/Sox8_binding_partner_analysis/scRNAseq_objects/")
 .libPaths("/R/libs/ArchR_Seurat_R_441")
 

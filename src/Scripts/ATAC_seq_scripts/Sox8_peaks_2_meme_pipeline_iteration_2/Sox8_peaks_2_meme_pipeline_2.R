@@ -2,7 +2,7 @@
 # 1. extract PPR and NC accessible peaks from full peakset. 
 # 2. Scan peaks for Sox8 and subset accordingly. 
 # 3. Plot differential accessibility between PPR and NC Sox8 peaks
-# 4. Output Sox8+ differentially accessible and mutually accessible peaks for NC and SOX8 at ss4 and ss8 that are ready for SpaMo analysis
+# 4. Output Sox8+ differentially accessible and mutually accessible peaks for NC and SOX8 at ss4 and ss8 that are ready for SpaMo analysis (fasta formatted and centred around the Sox8 motif
 # Ran using alexthiery-schelper-archr_dev_macs2-schelper-0.3.5.img containers
 
 .libPaths("/R/libs/AT_ArcR_macs2")
@@ -159,6 +159,7 @@ any(ss8_PPR_only_peaks %over% ss8_NC_only_peaks) # FALSE
 # Find mutually accessible peaks for NC and PPR at both stages
 ss4_PPR_and_NC_peaks <- ss4_PPR_accessible_peaks_combined[ss4_PPR_accessible_peaks_combined %over% ss4_NC_accessible_peaks_combined]  # 1710 peaks
 ss8_PPR_and_NC_peaks <- ss8_PPR_accessible_peaks_combined[ss8_PPR_accessible_peaks_combined %over% ss8_NC_accessible_peaks_combined]  # 2648 peaks
+
 
 #########################################################################################################
 ######################################## MOTIF SCANNING #################################################
@@ -346,23 +347,3 @@ writeXStringSet(ss4_PPR_all_Sox8_seq, file=paste0(path_MEME, "ss4_PPR_all_Sox8_s
 writeXStringSet(ss4_NC_all_Sox8_Sox8_seq, file=paste0(path_MEME, "ss4_NC_all_Sox8_Sox8_seq.fasta"))
 writeXStringSet(ss8_PPR_all_Sox8_seq, file=paste0(path_MEME, "ss8_PPR_all_Sox8_seq.fasta"))
 writeXStringSet(ss8_NC_all_Sox8_Sox8_seq, file=paste0(path_MEME, "ss8_NC_all_Sox8_Sox8_seq.fasta"))
-
-
-
-
-
-
-
-
-markers <- getMarkerFeatures(
-  ArchRProj = ss4ArchRProj,
-  useMatrix = "PeakMatrix",
-  groupBy = "transferred_scHelper_cell_type_broad",
-  bias = c("TSSEnrichment", "log10(nFrags)"),
-  testMethod = "wilcoxon",
-  useGroups = "Placodal",
-  bgdGroups = "NC"
-)
-
-marker_list <- getMarkers(markers, cutOff = "FDR <= 0.05 & Log2FC >= 1", returnGR = TRUE)
-marker_list[["Placodal"]]

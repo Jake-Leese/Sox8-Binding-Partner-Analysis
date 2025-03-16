@@ -1,4 +1,4 @@
-# Script to calculate correlation coefficients, plot and write them to file
+# Script to calculate correlation coefficients and to visualise distributions and the relationship between count and correlation values
 # Run using ArchR_Seurat_R_4.4.1.sif container
 
 
@@ -143,7 +143,7 @@ log(sum(NC_HH9_RNA_Counts[, "SOX8"]))  # 9.013717
 
 #write.csv(HH9_RNA_spearman_placode_counts_and_cor, "/data/Sox8_binding_partner_analysis/Plots/QC/Counts_against_correlation_HH9_RNA_spearman_placode_SOX8_cells.csv")
 
-HH9_RNA_spearman_placode_counts_and_cor %>% arrange(desc(correlations))
+HH9_RNA_spearman_placode_counts_and_cor %>% arrange(desc(correlations)) # To see which factors are at the top and choose them for labelling
 
 HH8_placode_points_to_label <- c("LMX1B", "SP8", "TCF12", "DLX6", "TFAP2C", "LMX1A", "NR6A1", "NOTO", "SP5", "BHLHE23", "ASCL1") # For placode plots
 HH8_NC_points_to_label <- c("SOX9", "ETS1", "TFAP2B", "CREB3L1", "FOXD3", "SOX10", "TFAP2E", "TFAP2A", "NEUROG2", "MYC", "FLI1") # for NC plots

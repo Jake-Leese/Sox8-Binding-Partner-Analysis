@@ -1,3 +1,10 @@
+# Script to:
+# 1. Extract RNA count data for transcription factors at each stage and cell type of interest
+# 2. Perform Spearman rank correlation analysis between SOX8 and all other TFs
+# 3. Filter TFs either by 0.1 or mean+stdev threshold, and then plot correlation coefficients on a heatmap
+# 4. Save correlation values in a csv file
+# Run using ArchR_Seurat_R_4.4.1.sif container
+
 setwd("/data/Sox8_binding_partner_analysis/scRNAseq_objects/")
 .libPaths("/R/libs/ArchR_Seurat_R_441")
 

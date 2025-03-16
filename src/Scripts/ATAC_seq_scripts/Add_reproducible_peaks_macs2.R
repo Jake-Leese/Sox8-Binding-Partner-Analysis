@@ -1,6 +1,13 @@
 # Script for peak calling peaks for broad_sc_helper_celltypes in ss4 and ss8 ArchR projects
 # This is with the aim of identifying all open peaks in placodal and NC cell types, rather than just focussing on differential accessibility.
-# The output should give us GRanges objects for all accessible Placodal and NC peaks for ss4 and ss8 stages. These can then be further subsetted into NC- or placode-only peaksets for downstream analysis
+
+# The steps are:
+# 1. Add group coverages for transferred cell type labels for ss4 and ss8 (this creates pseudo-bulk-replicates that can then be used for peak calling)
+# 2. Add reproducible peaksets (this performs macs2 peak calling on the pseudobulk replicates, and generates reproducible peaksets for each cell type. These are then merged into a consensus peak set)
+# 3. Read in the reproducible peaksets for PPR and NC cell types
+# 4. Scan peaksets for presence of SOX8 binding motif and add flanking regions for SpaMo motif enrichment analysis
+# 5. Final outputs are fasta formatted peaksets centred around the SOX8 binding motif for open chromatin in PPR and NC cells at ss4 and ss8 stages
+
 # Using alexthiery-schelper-archr_dev_macs2-schelper-0.3.5.img container
 
 .libPaths("/R/libs/AT_ArcR_macs2")

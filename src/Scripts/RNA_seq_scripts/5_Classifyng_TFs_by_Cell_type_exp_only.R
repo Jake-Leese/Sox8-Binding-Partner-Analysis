@@ -1,3 +1,8 @@
+# Script to run differential gene expression analysis between TFs and identify those that are differentially expressed between PPR and NC at each stage
+# In contrast to other scripts, this does not take SOX8 expression into account
+# Outputs a MEME formatted motif matrix list for PPR and NC TFs at each stage
+# Run using ArchR_Seurat_R_4.4.1.sif container
+
 setwd("/data/Sox8_binding_partner_analysis/scRNAseq_objects/")
 .libPaths("/R/libs/ArchR_Seurat_R_441")
 

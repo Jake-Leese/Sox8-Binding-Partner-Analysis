@@ -1,5 +1,6 @@
 # Script to scan for SOX8 binding motifs and subset our peaksets accordingly. 
 # Outputs subsetted peaks centered around Sox8 motifs for SpaMo analysis
+# Using alexthiery-schelper-archr_dev_macs2-schelper-0.3.5.img container
 
 .libPaths("/R/libs/AT_ArcR_macs2")
 setwd('/data/Sox8_binding_partner_analysis/scATACseq_objects')

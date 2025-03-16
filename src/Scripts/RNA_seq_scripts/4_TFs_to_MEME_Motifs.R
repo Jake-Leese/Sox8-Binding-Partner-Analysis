@@ -1,4 +1,4 @@
-# Script to prepare MEME compatible motif lists for xo-expressed TFs
+# Script to prepare MEME compatible motif lists for co-expressed TFs
 # Using ArchR_Seurat_R_4.4.1.sif container
 
 

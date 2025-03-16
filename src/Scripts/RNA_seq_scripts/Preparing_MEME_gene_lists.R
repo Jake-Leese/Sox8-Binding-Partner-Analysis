@@ -115,6 +115,3 @@ writeLines(HH9_NC_gene_ids$gene_id, "/data/Sox8_binding_partner_analysis/scRNAse
 #writeLines(HH9_Placode_genes, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH9_Placode_genes.txt")
 #writeLines(HH9_NC_genes, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH9_NC_genes.txt")
 
-
-
-dim(HH8_Placode_gene_ids)
