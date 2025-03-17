@@ -34,6 +34,10 @@ source("/data/Sox8_binding_partner_analysis/src/Functions/plot_correlation_again
 HHall_ectoderm <- readRDS("HHall_ectoderm_2024-06-24")
 
 
+####################################################################################################################
+######################## DEFINING GENE EXPRESSION BASED ON CORRELATION WITH SOX8 ###################################
+
+
 # Custom function to extract count data for: Stage, Cell_type (ectoderm type), Sample (origin.ident)(optional), and Assay ("RNA" or "SCT"), data_type ("counts" or "data" (log.normalised)), and subset_cells_by_gene ("gene.name") 
 placode_HH8_RNA_Counts <- Extract_count_data(HHall_ectoderm, Stage = "HH8", Cell_type = "placode", Assay = "RNA", data_type = "counts", subset_cells_by_gene = "SOX8")
 NC_HH8_RNA_Counts <- Extract_count_data(HHall_ectoderm, Stage = "HH8", Cell_type = "NC", Assay = "RNA", data_type = "counts", subset_cells_by_gene = "SOX8")
@@ -115,3 +119,55 @@ writeLines(HH9_NC_gene_ids$gene_id, "/data/Sox8_binding_partner_analysis/scRNAse
 #writeLines(HH9_Placode_genes, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH9_Placode_genes.txt")
 #writeLines(HH9_NC_genes, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH9_NC_genes.txt")
 
+
+####################################################################################################################
+########################## DEFINING SEURAT DEGS AS DOWNSTREAM GENES OF INTEREST ####################################
+
+# Subsetting seurat object cells by stage
+HH8_ectoderm_genes <- HHall_ectoderm[,HHall_ectoderm$stage %in% "HH8"]
+HH9_ectoderm_genes <- HHall_ectoderm[,HHall_ectoderm$stage %in% "HH9"]
+
+# Perform differential expression analysis between NC and PPR for each stage
+HH8_Placodal_vs_NC <- FindMarkers(
+  HH8_ectoderm_genes,
+  group.by = "ectoderm_type",
+  ident.1 = "placode",
+  ident.2 = "NC",
+  assay = "SCT",
+  min.pct = 0,
+  logfc.threshold = 0,
+  test.use = "wilcox"
+)
+
+HH9_Placodal_vs_NC <- FindMarkers(
+  HH9_ectoderm_genes,
+  group.by = "ectoderm_type",
+  ident.1 = "placode",
+  ident.2 = "NC",
+  assay = "SCT",
+  min.pct = 0,
+  logfc.threshold = 0,
+  test.use = "wilcox"
+)
+
+# Extract genes expressed significantly more in Placode or NC cells. + log2FC is placodal, - log2FC is NC
+HH8_PPR_DEGs <- rownames(HH8_Placodal_vs_NC[HH8_Placodal_vs_NC$avg_log2FC > 0 & HH8_Placodal_vs_NC$p_val_adj < 0.05, ])
+HH8_NC_DEGs <- rownames(HH8_Placodal_vs_NC[HH8_Placodal_vs_NC$avg_log2FC < 0 & HH8_Placodal_vs_NC$p_val_adj < 0.05, ])
+HH9_PPR_DEGs <- rownames(HH9_Placodal_vs_NC[HH9_Placodal_vs_NC$avg_log2FC > 0 & HH9_Placodal_vs_NC$p_val_adj < 0.05, ])
+HH9_NC_DEGs <- rownames(HH9_Placodal_vs_NC[HH9_Placodal_vs_NC$avg_log2FC < 0 & HH9_Placodal_vs_NC$p_val_adj < 0.05, ])
+
+
+# Adding gene_ids from GalGal6 GTF using function defined in previous section
+HH8_PPR_DEGs_IDs <- Add_gene_IDs(galgal6_gtf_df, HH8_PPR_DEGs)
+HH8_NC_DEGs_IDs <- Add_gene_IDs(galgal6_gtf_df, HH8_NC_DEGs)
+HH9_PPR_DEGs_IDs <- Add_gene_IDs(galgal6_gtf_df, HH9_PPR_DEGs)
+HH9_NC_DEGs_IDs <- Add_gene_IDs(galgal6_gtf_df, HH9_NC_DEGs)
+
+
+# Working out why genes are lost when Add_gene_IDs is run
+all_gtf_ids <- unique(c(galgal6_gtf_df$gene_name, galgal6_gtf_df$gene_id, galgal6_gtf_df$transcript_id)) # Making a vector of all gene_names, gene_ids and transcript_ids from galgal6 gtf
+setdiff(HH8_PPR_DEGs, all_gtf_ids) # Returns all of our DEGs that do not match any of the identifiers. There are many that do not match which explains why we lose genes. 
+# Realised that David re-processed everything with GalGal7, hence why there are mismatches. Will get the GTF he used and try again
+
+
+galgal6_gtf_df %>% filter(if_any(c(gene_id, gene_name, transcript_id), ~ grepl("ENSGALG00010024051", .)))
