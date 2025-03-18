@@ -20,6 +20,7 @@ library(ggrepel)
 library(GenomicRanges)
 library(rtracklayer)
 library(dplyr)
+library(stringr)
 
 ############################### MAKE PPR/NC GENE LISTS FROM SCRNA-SEQ DATA ##########################################
 
@@ -85,7 +86,7 @@ galgal6_gtf_df <- as.data.frame(galgal6_gtf)
 # Function to return character vector of gene names, gene_ids, or gene_list, and return gene name and corresponding gene_ids
 Add_gene_IDs <- function(gtf, gene_list) {
 filtered_gtf <- gtf %>%
-  filter(gene_name %in% gene_list | gene_id %in% gene_list | transcript_id %in% gene_list) %>%
+  filter(str_detect(tolower(gene_name), tolower(paste(gene_list, collapse = "|"))) | gene_id %in% gene_list | transcript_id %in% gene_list) %>%
   select(gene_id, gene_name) %>%
   distinct(gene_id, .keep_all = TRUE)
 }  
@@ -163,11 +164,52 @@ HH8_NC_DEGs_IDs <- Add_gene_IDs(galgal6_gtf_df, HH8_NC_DEGs)
 HH9_PPR_DEGs_IDs <- Add_gene_IDs(galgal6_gtf_df, HH9_PPR_DEGs)
 HH9_NC_DEGs_IDs <- Add_gene_IDs(galgal6_gtf_df, HH9_NC_DEGs)
 
+# Saving as .csv file
+write.csv(HH8_PPR_DEGs_IDs, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH8_Placode_DEG_ids_gal6.csv")
+write.csv(HH8_NC_DEGs_IDs, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH8_NC_DEG_ids_gal6.csv")
+write.csv(HH9_PPR_DEGs_IDs, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH9_Placode_DEG_ids_gal6.csv")
+write.csv(HH9_NC_DEGs_IDs, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH8_NC_DEG_ids_gal6.csv")
 
-# Working out why genes are lost when Add_gene_IDs is run
-all_gtf_ids <- unique(c(galgal6_gtf_df$gene_name, galgal6_gtf_df$gene_id, galgal6_gtf_df$transcript_id)) # Making a vector of all gene_names, gene_ids and transcript_ids from galgal6 gtf
-setdiff(HH8_PPR_DEGs, all_gtf_ids) # Returns all of our DEGs that do not match any of the identifiers. There are many that do not match which explains why we lose genes. 
-# Realised that David re-processed everything with GalGal7, hence why there are mismatches. Will get the GTF he used and try again
+# Saving as gene_lists using gene_ids for enhancer annotation
+writeLines(HH8_PPR_DEGs_IDs$gene_id, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH8_Placode_DEGs_gal6.txt")
+writeLines(HH8_NC_DEGs_IDs$gene_id, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH8_NC_DEGs_gal6.txt")
+writeLines(HH9_PPR_DEGs_IDs$gene_id, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH9_Placode_DEGs_gal6.txt")
+writeLines(HH9_NC_DEGs_IDs$gene_id, "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH9_NC_DEGs_gal6.txt")
 
 
-galgal6_gtf_df %>% filter(if_any(c(gene_id, gene_name, transcript_id), ~ grepl("ENSGALG00010024051", .)))
+
+##########################################################################################################################
+##################################### MATCHING GALGAL7 TO GALGAL6 GENES ##################################################
+
+# Comparing GalGal6 and GalGal7 gene names
+galgal6_all_gene_names <- unique(galgal6_gtf_df$gene_name) # 13,486 unique gene names
+galgal7_all_gene_names <- unique(galgal7_gtf_df$gene_name) # 13,975 unique gene names
+length(intersect(galgal6_all_gene_names, galgal7_all_gene_names)) #12,093 common gene names across both (out of 13,486 galgal6 genes)
+length(intersect(tolower(galgal6_all_gene_names), tolower(galgal7_all_gene_names))) # 12,106 when we remove case sensitivity
+sum(str_detect(tolower(galgal6_all_gene_names), tolower(paste(galgal7_all_gene_names, collapse = "|"))), na.rm = TRUE) # 12,539 when we count all cases of galgal7 gene names whose string can be detected within galgal6 gene names, even if they don't perfectly match
+
+# Checking intersect between gene_names in our galgal7 DEG lists and those that are not found (setdiff) in GalGal6
+HH8_PPR_DEGs_GalGal7_only <- intersect(HH8_PPR_DEGs_IDs$gene_name, setdiff(galgal7_all_gene_names, galgal6_all_gene_names))  # 105 "unique" galgal7 genes
+HH8_NC_DEGs_GalGal7_only <- intersect(HH8_NC_DEGs_IDs$gene_name, setdiff(galgal7_all_gene_names, galgal6_all_gene_names))  # 83 "unique" galgal7 genes
+HH9_PPR_DEGs_GalGal7_only <- intersect(HH9_PPR_DEGs_IDs$gene_name, setdiff(galgal7_all_gene_names, galgal6_all_gene_names))  # 188 "unique" galgal7 genes
+HH9_NC_DEGs_GalGal7_only <- intersect(HH9_NC_DEGs_IDs$gene_name, setdiff(galgal7_all_gene_names, galgal6_all_gene_names))  # 202 "unique" galgal7 genes
+
+
+# GalGal6 genes that are saved by removing case sensitivity and using str_detect() in Add_gene_IDs()
+HH8_PPR_galgal6_recovered <- HH8_PPR_DEGs_IDs[str_detect(tolower(HH8_PPR_DEGs_IDs$gene_name), tolower(paste(HH8_PPR_DEGs_GalGal7_only, collapse = "|"))), ] # Recovers 33 of the 105 "unique" galgal7 genes
+HH8_NC_galgal6_recovered <- HH8_NC_DEGs_IDs[str_detect(tolower(HH8_NC_DEGs_IDs$gene_name), tolower(paste(HH8_NC_DEGs_GalGal7_only, collapse = "|"))), ] # Recovers 16 of the 83 "unique" galgal7 genes
+HH9_PPR_galgal6_recovered <- HH9_PPR_DEGs_IDs[str_detect(tolower(HH9_PPR_DEGs_IDs$gene_name), tolower(paste(HH9_PPR_DEGs_GalGal7_only, collapse = "|"))), ] # Recovers 43 of the 188 "unique" galgal7 genes
+HH9_NC_galgal6_recovered <- HH9_NC_DEGs_IDs[str_detect(tolower(HH9_NC_DEGs_IDs$gene_name), tolower(paste(HH9_NC_DEGs_GalGal7_only, collapse = "|"))), ]  # Recovers 26 of the 202 "unique" galgal7 genes
+
+# Saving matched genes to file for future reference
+writeLines(HH8_PPR_galgal6_recovered$gene_name , "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH8_PPR_DEGs_gal6_recovered.txt")
+writeLines(HH8_NC_galgal6_recovered$gene_name , "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH8_NC_DEGs_gal6_recovered.txt")
+writeLines(HH9_PPR_galgal6_recovered$gene_name , "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH9_PPR_DEGs_gal6_recovered.txt")
+writeLines(HH9_NC_galgal6_recovered$gene_name , "/data/Sox8_binding_partner_analysis/scRNAseq_objects/CoExpressed_genes/HH9_NC_DEGs_gal6_recovered.txt")
+
+
+# Searching gtf dataframes for specific gene names and IDs
+galgal6_gtf_df[galgal6_gtf_df$gene_id == "ENSGALG00000039118", ]
+galgal7_gtf_df_no_na <- galgal7_gtf_df[!is.na(galgal7_gtf_df$gene_name), ]
+galgal7_gtf_df_no_na[galgal7_gtf_df_no_na$gene_name == "MEIS2", ]
+
