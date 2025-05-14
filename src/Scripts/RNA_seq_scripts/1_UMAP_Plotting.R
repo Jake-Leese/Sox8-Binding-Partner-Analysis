@@ -6,23 +6,25 @@ setwd("/data/Sox8_binding_partner_analysis/scRNAseq_objects")
 library(Seurat)
 library(usethis)
 library(devtools)
+library(viridis)
 
 # Load and check the Seurat object
 HHall_ectoderm <- readRDS("HHall_ectoderm_2024-06-24")
 
+viridis <- viridis(n = 30, alpha = 0.6, option = "E")
 
 # view available dimensionality reductions to plot from the dataset
 HHall_ectoderm@reductions
 
 # Generate a feature plot for gene of interest
-FeaturePlot(object = HHall_ectoderm, features = "SOX8", reduction = "umap.HHall", 
-            cols = c("lightgrey", "red"), pt.size = 0.1)
+FeaturePlot(object = HHall_ectoderm, features = "SOX8", reduction = "umap", 
+            cols = c("lightgray", "red"), pt.size = 1)
 
 # Plot UMAP labeled by 'stage' 
 DimPlot(object = HHall_ectoderm, reduction = "umap.HHall", group.by = "stage", 
-        pt.size = 0.1)
+        pt.size = 1)
 
 # Plot UMAP labeled by 'Ectoderm_type' 
 DimPlot(object = HHall_ectoderm, reduction = "umap.HHall", group.by = "ectoderm_type", 
-        pt.size = 0.1)
+        pt.size = 1)
 

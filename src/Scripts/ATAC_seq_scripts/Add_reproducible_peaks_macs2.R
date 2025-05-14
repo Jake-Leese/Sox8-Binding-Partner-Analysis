@@ -104,6 +104,8 @@ ss8_aPPR_Peaks <- readRDS("/data/Sox8_binding_partner_analysis/scATACseq_objects
 ss8_dNC_Peaks <- readRDS("/data/Sox8_binding_partner_analysis/scATACseq_objects/ss8_celltype_peaks_Save-ArchR/PeakCalls/transferred_scHelper_cell_type/dNC-reproduciblePeaks.gr.rds")
 ss8_NC_Peaks <- readRDS("/data/Sox8_binding_partner_analysis/scATACseq_objects/ss8_celltype_peaks_Save-ArchR/PeakCalls/transferred_scHelper_cell_type/NC-reproduciblePeaks.gr.rds")
 
+unique(ss4_pPPR_Peaks$peakType)
+
 # Combine and remove duplicates using reduce()
 ss4_NC_all_Peaks <- GenomicRanges::reduce(c(ss4_dNC_Peaks, ss4_NC_Peaks))
 ss4_PPR_all_Peaks <- GenomicRanges::reduce(c(ss4_pPPR_Peaks, ss4_aPPR_Peaks))
@@ -125,6 +127,7 @@ ACTG_freqs <- c(A = 0.2487819, C = 0.2512324, T = 0.2512223, G = 0.2487634)
 
 # Get the SOX8 motif from JASPAR2020
 SOX8_tfm <- getMatrixSet(JASPAR2020, opts = list(collection = "CORE", tax_group = "vertebrates", matrixtype = "PWM", name = "SOX8"))[[1]]
+
 
 # Scan for motif occurrences in the peakset
 ss4_NC_motif_hits <- matchMotifs(SOX8_tfm, ss4_NC_all_Peaks, genome = BSgenome.Ggallus.UCSC.galGal6, 
@@ -150,33 +153,94 @@ ss8_NC_motif_hits_100bp_surr <- expand_ranges(ss8_NC_motif_hits, expansion_amoun
 ss8_PPR_motif_hits_100bp_surr <- expand_ranges(ss8_PPR_motif_hits, expansion_amount = 100, KeepExistingRange = TRUE)
 ss8_pPPR_motif_hits_100bp_surr <- expand_ranges(ss8_pPPR_motif_hits, expansion_amount = 100, KeepExistingRange = TRUE)
 
+# Making peaks for general enrichment analysis
+ss4_NC_motif_hits_200bp_surr <- expand_ranges(ss4_NC_motif_hits, expansion_amount = 200, KeepExistingRange = TRUE)
+ss4_PPR_motif_hits_200bp_surr <- expand_ranges(ss4_PPR_motif_hits, expansion_amount = 200, KeepExistingRange = TRUE)
+ss4_pPPR_motif_hits_200bp_surr <- expand_ranges(ss4_pPPR_motif_hits, expansion_amount = 200, KeepExistingRange = TRUE)
+ss8_NC_motif_hits_200bp_surr <- expand_ranges(ss8_NC_motif_hits, expansion_amount = 200, KeepExistingRange = TRUE)
+ss8_PPR_motif_hits_200bp_surr <- expand_ranges(ss8_PPR_motif_hits, expansion_amount = 200, KeepExistingRange = TRUE)
+ss8_pPPR_motif_hits_200bp_surr <- expand_ranges(ss8_pPPR_motif_hits, expansion_amount = 200, KeepExistingRange = TRUE)
+
+# Function to find overlaps, and remove overlapping ranges
+Remove_overlaps <- function(subject, query) {
+  # Find overlaps
+  overlapping_indices <- queryHits(findOverlaps(subject, query))
+    # Remove overlapping ranges
+  subject_filtered <- subject[-overlapping_indices]
+    # Print or save the filtered GRanges object
+  return(subject_filtered)
+}
+
+# Making background peaks for comparison using all other peaks that do not have SOX8 motif
+ss4_NC_no_SOX8 <- Remove_overlaps(ss4_NC_all_Peaks, ss4_NC_motif_hits_200bp_surr)
+ss4_PPR_no_SOX8 <- Remove_overlaps(ss4_PPR_all_Peaks, ss4_PPR_motif_hits_200bp_surr)
+ss8_NC_no_SOX8 <- Remove_overlaps(ss8_NC_all_Peaks, ss8_NC_motif_hits_200bp_surr)
+ss8_PPR_no_SOX8 <- Remove_overlaps(ss8_PPR_all_Peaks, ss8_PPR_motif_hits_200bp_surr)
+
+
+# Save as bed format files for homer/enhancer annotation
+NC_bed_path <- "/data/Sox8_binding_partner_analysis/enhancer_annotation/bed_files/NC/Reproducible_open/"
+PPR_bed_path <- "/data/Sox8_binding_partner_analysis/enhancer_annotation/bed_files/PPR/Reproducible_open/"
+unfiltered_bed_path <- "/data/Sox8_binding_partner_analysis/enhancer_annotation/bed_files/Unfiltered/"
+
+write.table(as.data.frame(ss4_NC_motif_hits_200bp_surr)[, c("seqnames", "start", "end")], paste0(NC_bed_path, "ss4_NC_all_peaks_200bp_surr.bed"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+write.table(as.data.frame(ss8_NC_motif_hits_200bp_surr)[, c("seqnames", "start", "end")], paste0(NC_bed_path, "ss8_NC_all_peaks_200bp_surr.bed"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+write.table(as.data.frame(ss4_PPR_motif_hits_200bp_surr)[, c("seqnames", "start", "end")], paste0(PPR_bed_path, "ss4_PPR_all_peaks_200bp_surr.bed"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+write.table(as.data.frame(ss8_PPR_motif_hits_200bp_surr)[, c("seqnames", "start", "end")], paste0(PPR_bed_path, "ss8_PPR_all_peaks_200bp_surr.bed"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+
+write.table(as.data.frame(ss4_NC_no_SOX8)[, c("seqnames", "start", "end")], paste0(NC_bed_path, "ss4_NC_no_SOX8_bg_peaks.bed"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+write.table(as.data.frame(ss8_NC_no_SOX8)[, c("seqnames", "start", "end")], paste0(NC_bed_path, "ss8_NC_no_SOX8_bg_peaks.bed"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+write.table(as.data.frame(ss4_PPR_no_SOX8)[, c("seqnames", "start", "end")], paste0(PPR_bed_path, "ss4_PPR_no_SOX8_bg_peaks.bed"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+write.table(as.data.frame(ss8_PPR_no_SOX8)[, c("seqnames", "start", "end")], paste0(PPR_bed_path, "ss8_PPR_no_SOX8_bg_peaks.bed"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+
+write.table(as.data.frame(ss4_NC_all_Peaks)[, c("seqnames", "start", "end")], paste0(unfiltered_bed_path, "ss4_NC_all_Peaks.bed"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+write.table(as.data.frame(ss4_PPR_all_Peaks)[, c("seqnames", "start", "end")], paste0(unfiltered_bed_path, "ss4_PPR_all_Peaks.bed"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+write.table(as.data.frame(ss8_NC_all_Peaks)[, c("seqnames", "start", "end")], paste0(unfiltered_bed_path, "ss8_NC_all_Peaks.bed"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+write.table(as.data.frame(ss8_PPR_all_Peaks)[, c("seqnames", "start", "end")], paste0(unfiltered_bed_path, "ss8_PPR_all_Peaks.bed"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
 
 #### CREATE AND SAVE FASTA FILES FOR PEAKSETS AS INPUTS FOR MEME ####
 
 GalGal6 <- BSgenome.Ggallus.UCSC.galGal6
 
 # Get raw sequence using the GRanges objects
-ss4_NC_motif_hits_100bp_seq <- getSeq(GalGal6, ss4_NC_motif_hits_100bp_surr)
-ss4_PPR_motif_hits_100bp_seq <- getSeq(GalGal6, ss4_PPR_motif_hits_100bp_surr)
-ss4_pPPR_motif_hits_100bp_seq <- getSeq(GalGal6, ss4_pPPR_motif_hits_100bp_surr)
-ss8_NC_motif_hits_100bp_seq <- getSeq(GalGal6, ss8_NC_motif_hits_100bp_surr)
-ss8_PPR_motif_hits_100bp_seq <- getSeq(GalGal6, ss8_PPR_motif_hits_100bp_surr)
-ss8_pPPR_motif_hits_100bp_seq <- getSeq(GalGal6, ss8_pPPR_motif_hits_100bp_surr)
+ss4_NC_motif_hits_200bp_seq <- getSeq(GalGal6, ss4_NC_motif_hits_200bp_surr)
+ss4_PPR_motif_hits_200bp_seq <- getSeq(GalGal6, ss4_PPR_motif_hits_200bp_surr)
+ss4_pPPR_motif_hits_200bp_seq <- getSeq(GalGal6, ss4_pPPR_motif_hits_200bp_surr)
+ss8_NC_motif_hits_200bp_seq <- getSeq(GalGal6, ss8_NC_motif_hits_200bp_surr)
+ss8_PPR_motif_hits_200bp_seq <- getSeq(GalGal6, ss8_PPR_motif_hits_200bp_surr)
+ss8_pPPR_motif_hits_200bp_seq <- getSeq(GalGal6, ss8_pPPR_motif_hits_200bp_surr)
+
+ss4_NC_no_SOX8_seq <- getSeq(GalGal6, ss4_NC_no_SOX8)
+ss4_PPR_no_SOX8_seq <- getSeq(GalGal6, ss4_PPR_no_SOX8)
+ss8_NC_no_SOX8_seq <- getSeq(GalGal6, ss8_NC_no_SOX8)
+ss8_PPR_no_SOX8_seq <- getSeq(GalGal6, ss8_PPR_no_SOX8)
 
 # Adding seqnames and ranges as unique sequence identifiers
-names(ss4_NC_motif_hits_100bp_seq) <- paste0(ss4_NC_motif_hits_100bp_surr@seqnames, ":", ss4_NC_motif_hits_100bp_surr@ranges)
-names(ss4_PPR_motif_hits_100bp_seq) <- paste0(ss4_PPR_motif_hits_100bp_surr@seqnames, ":", ss4_PPR_motif_hits_100bp_surr@ranges)
-names(ss4_pPPR_motif_hits_100bp_seq) <- paste0(ss4_pPPR_motif_hits_100bp_surr@seqnames, ":", ss4_pPPR_motif_hits_100bp_surr@ranges)
-names(ss8_NC_motif_hits_100bp_seq) <- paste0(ss8_NC_motif_hits_100bp_surr@seqnames, ":", ss8_NC_motif_hits_100bp_surr@ranges)
-names(ss8_PPR_motif_hits_100bp_seq) <- paste0(ss8_PPR_motif_hits_100bp_surr@seqnames, ":", ss8_PPR_motif_hits_100bp_surr@ranges)
-names(ss8_pPPR_motif_hits_100bp_seq) <- paste0(ss8_pPPR_motif_hits_100bp_surr@seqnames, ":", ss8_pPPR_motif_hits_100bp_surr@ranges)
+names(ss4_NC_motif_hits_200bp_seq) <- paste0(ss4_NC_motif_hits_200bp_surr@seqnames, ":", ss4_NC_motif_hits_200bp_surr@ranges)
+names(ss4_PPR_motif_hits_200bp_seq) <- paste0(ss4_PPR_motif_hits_200bp_surr@seqnames, ":", ss4_PPR_motif_hits_200bp_surr@ranges)
+names(ss4_pPPR_motif_hits_200bp_seq) <- paste0(ss4_pPPR_motif_hits_200bp_surr@seqnames, ":", ss4_pPPR_motif_hits_200bp_surr@ranges)
+names(ss8_NC_motif_hits_200bp_seq) <- paste0(ss8_NC_motif_hits_200bp_surr@seqnames, ":", ss8_NC_motif_hits_200bp_surr@ranges)
+names(ss8_PPR_motif_hits_200bp_seq) <- paste0(ss8_PPR_motif_hits_200bp_surr@seqnames, ":", ss8_PPR_motif_hits_200bp_surr@ranges)
+names(ss8_pPPR_motif_hits_200bp_seq) <- paste0(ss8_pPPR_motif_hits_200bp_surr@seqnames, ":", ss8_pPPR_motif_hits_200bp_surr@ranges)
+
+names(ss4_NC_no_SOX8_seq) <- paste0(ss4_NC_no_SOX8@seqnames, ":", ss4_NC_no_SOX8@ranges)
+names(ss4_PPR_no_SOX8_seq) <- paste0(ss4_PPR_no_SOX8@seqnames, ":", ss4_PPR_no_SOX8@ranges)
+names(ss8_NC_no_SOX8_seq) <- paste0(ss8_NC_no_SOX8@seqnames, ":", ss8_NC_no_SOX8@ranges)
+names(ss8_PPR_no_SOX8_seq) <- paste0(ss8_PPR_no_SOX8@seqnames, ":", ss8_PPR_no_SOX8@ranges)
 
 # Write out sequences as .fasta files
 path_MEME <- "/data/Sox8_binding_partner_analysis/meme_suite/March_2025/fasta_files/"
-writeXStringSet(ss4_NC_motif_hits_100bp_seq, file=paste0(path_MEME, "ss4_NC_rep_peaks_SOX8_100bp.fasta"))
-writeXStringSet(ss4_PPR_motif_hits_100bp_seq, file=paste0(path_MEME, "ss4_PPR_rep_peaks_SOX8_100bp.fasta"))
-writeXStringSet(ss4_pPPR_motif_hits_100bp_seq, file=paste0(path_MEME, "ss4_pPPR_rep_peaks_SOX8_100bp.fasta"))
-writeXStringSet(ss8_NC_motif_hits_100bp_seq, file=paste0(path_MEME, "ss8_NC_rep_peaks_SOX8_100bp.fasta"))
-writeXStringSet(ss8_PPR_motif_hits_100bp_seq, file=paste0(path_MEME, "ss8_PPR_rep_peaks_SOX8_100bp.fasta"))
-writeXStringSet(ss8_pPPR_motif_hits_100bp_seq, file=paste0(path_MEME, "ss8_pPPR_rep_peaks_SOX8_100bp.fasta"))
+
+writeXStringSet(ss4_NC_motif_hits_200bp_seq, file=paste0(path_MEME, "ss4_NC_rep_peaks_SOX8_200bp.fasta"))
+writeXStringSet(ss4_PPR_motif_hits_200bp_seq, file=paste0(path_MEME, "ss4_PPR_rep_peaks_SOX8_200bp.fasta"))
+writeXStringSet(ss4_pPPR_motif_hits_200bp_seq, file=paste0(path_MEME, "ss4_pPPR_rep_peaks_SOX8_200bp.fasta"))
+writeXStringSet(ss8_NC_motif_hits_200bp_seq, file=paste0(path_MEME, "ss8_NC_rep_peaks_SOX8_200bp.fasta"))
+writeXStringSet(ss8_PPR_motif_hits_200bp_seq, file=paste0(path_MEME, "ss8_PPR_rep_peaks_SOX8_200bp.fasta"))
+writeXStringSet(ss8_pPPR_motif_hits_200bp_seq, file=paste0(path_MEME, "ss8_pPPR_rep_peaks_SOX8_200bp.fasta"))
+
+writeXStringSet(ss4_NC_no_SOX8_seq, file=paste0(path_MEME, "Background_peaks/ss4_NC_no_SOX8_bg_peaks.fasta"))
+writeXStringSet(ss4_PPR_no_SOX8_seq, file=paste0(path_MEME, "Background_peaks/ss4_PPR_no_SOX8_bg_peaks.fasta"))
+writeXStringSet(ss8_NC_no_SOX8_seq, file=paste0(path_MEME, "Background_peaks/ss8_NC_no_SOX8_bg_peaks.fasta"))
+writeXStringSet(ss8_PPR_no_SOX8_seq, file=paste0(path_MEME, "Background_peaks/ss8_PPR_no_SOX8_bg_peaks.fasta"))
+
 
